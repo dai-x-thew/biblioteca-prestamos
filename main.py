@@ -47,16 +47,17 @@ class Biblioteca:
                 datos = json.load(archivo)
         except FileNotFoundError:
             self.guardar()
-            return
+            return True
+
+        if not isinstance(datos["prestamos"], list):
+            print("Se esperaba una lista de préstamos.")
+            return False
 
         for carne, usuario in datos["usuarios"].items():
             self.usuarios[carne] = Usuario(carne, usuario["nombre"], usuario["estado"])
 
         for codigo, material in datos["materiales"].items():
             self.materiales[codigo] = Material(codigo, material["nombre"], material["cantidad_total"])
-
-        if not isinstance(datos["prestamos"], list):
-            raise ValueError("Se esperaba una lista de préstamos.")
 
         for prestamo in datos["prestamos"]:
             self.prestamos.append(Prestamo(
@@ -67,6 +68,7 @@ class Biblioteca:
                 prestamo["horas"],
                 prestamo.get("devuelto", False),
             ))
+        return True
 
     def guardar(self):
         datos = {"usuarios": {}, "materiales": {}, "prestamos": []}
@@ -257,10 +259,12 @@ def pedir_entero(mensaje, minimo, maximo=None):
 if __name__ == "__main__":
     biblioteca = Biblioteca(ARCHIVO)
     try:
-        biblioteca.cargar()
+        datos_cargados = biblioteca.cargar()
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
         print(f"No se pudieron cargar o inicializar los datos: {error}")
-    else:
+        datos_cargados = False
+
+    if datos_cargados:
         try:
             opcion = None
             while opcion != 0:
